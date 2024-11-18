@@ -154,6 +154,7 @@ export default defineComponent({
               cottonProductionKg: this.cottonProductionKg,
             },
           },
+          PublicKeyUrl: storedUser.publicKey, // setto il metodo di verifica
         }
 
         const keysStructure = {
@@ -168,7 +169,7 @@ export default defineComponent({
         try {
           // Chiamata API per firmare la dichiarazione
           const response = await axios.get(
-            'https://apiroom.net/api/bogx2/utente-firma-dichiarazione-senza-keys',
+            'https://apiroom.net/api/bogx2/Sign-the-VC1',
 
             {
               params: {
@@ -210,7 +211,6 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* Styling semplice */
 .v-card {
   border-radius: 8px;
 }

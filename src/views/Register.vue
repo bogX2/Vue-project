@@ -95,7 +95,7 @@ const formData = ref({
   role: '',
 })
 
-const roles = ['Coltivatore', 'Produttore', 'Rivenditore', 'Verificatore']
+const roles = ['Coltivatore', 'Produttore', 'Verificatore']
 
 const rules = {
   required: (value: string) => !!value || 'Campo obbligatorio',

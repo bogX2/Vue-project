@@ -19,12 +19,11 @@
 
         <!-- Griglia per mostrare due card per riga -->
         <v-row dense>
-          <v-col v-for="(credentials, index) in credentialsHistory" :key="index" cols="12" md="6">
+          <v-col v-for="(credential, index) in credentialsHistory" :key="index" cols="12" md="6">
             <v-card class="my-3" outlined>
-              <v-card-title>Credenziali #{{ index }}</v-card-title>
-              <!-- +1 per iniziare da 1 -->
-              <v-card-text>
-                <pre>{{ JSON.stringify(credentials, null, 2) }}</pre>
+              <v-card-title>Credenziale #{{ index }}</v-card-title>
+              <v-card-text class="scrollable-card-text">
+                <pre>{{ JSON.stringify(credential, null, 2) }}</pre>
               </v-card-text>
             </v-card>
           </v-col>
@@ -58,5 +57,13 @@ onMounted(() => {
   text-align: center;
   background-color: #4caf50;
   color: white;
+}
+
+.scrollable-card-text {
+  max-height: 600px; /* Imposta un'altezza massima per le credenziali */
+  overflow-y: auto; /* Permette lo scroll verticale */
+  background-color: #f5f5f5; /* Colore di sfondo per migliorare la leggibilità */
+  padding: 10px;
+  border-radius: 5px;
 }
 </style>

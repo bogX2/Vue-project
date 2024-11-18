@@ -153,6 +153,7 @@ export default defineComponent({
               tshirtProduction: this.tshirtProduction, // Cambiato per riflettere la produzione di magliette
             },
           },
+          PublicKeyUrl: storedUser.publicKey,
         }
 
         // Prepara la struttura delle chiavi per la firma
@@ -168,7 +169,7 @@ export default defineComponent({
         try {
           // Chiamata API per firmare la dichiarazione
           const response = await axios.get(
-            'https://apiroom.net/api/bogx2/utente-firma-dichiarazione-con-keys-del-appweb', // Cambiato per il produttore
+            'https://apiroom.net/api/bogx2/utente-firma-dichiarazione-con-keys-del-appweb',
             {
               params: {
                 data: JSON.stringify(credential),
