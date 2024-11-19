@@ -183,16 +183,11 @@ export default defineComponent({
           console.log('Credenziale firmata:', response.data)
           alert('Dichiarazione firmata con successo!')
 
-          // Salvataggio della credenziale firmata nel localStorage
-          const userCredentials = JSON.parse(localStorage.getItem('userCredentials') || '{}')
-          const userId = storedUser.id
+          // Recupera le credenziali esistenti dal localStorage o inizializza un array vuoto
+          let userCredentials = JSON.parse(localStorage.getItem('userCredentials') || '[]')
 
-          if (!userCredentials[userId]) {
-            userCredentials[userId] = [] // Inizializza l'array per l'utente se non esiste
-          }
-
-          // Aggiungi la nuova credenziale firmata all'array delle credenziali dell'utente
-          userCredentials[userId].push(response.data)
+          // Aggiungi la nuova credenziale all'array
+          userCredentials.push(response.data)
 
           // Salva l'array aggiornato nel localStorage
           localStorage.setItem('userCredentials', JSON.stringify(userCredentials))

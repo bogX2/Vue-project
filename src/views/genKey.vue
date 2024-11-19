@@ -1,40 +1,54 @@
 <template>
   <v-app>
-    <!-- Container centrato -->
-    <v-container class="d-flex align-center justify-center fill-height">
-      <v-card class="mx-auto" max-width="500">
-        <v-card-title>Registrazione Utente</v-card-title>
-        <v-card-text>
-          <v-form ref="form" v-model="isValid">
-            <v-text-field v-model="formData.name" label="Nome Utente" required></v-text-field>
+    <v-app-bar app color="white" dark>
+      <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="80" height="80" />
+      <v-spacer></v-spacer>
+      <v-btn>
+        <RouterLink to="/">Home</RouterLink>
+      </v-btn>
+      <v-btn>
+        <RouterLink to="/register">Registrazione</RouterLink>
+      </v-btn>
+      <v-btn>
+        <RouterLink to="/onboardingTab">Tabella</RouterLink>
+      </v-btn>
+    </v-app-bar>
+    <v-main>
+      <v-container>
+        <h1 class="text-center">Seleziona una Credenziale per la Verifica</h1>
 
-            <v-text-field
-              v-model="formData.email"
-              label="Email"
-              type="email"
-              :rules="[rules.required, rules.email]"
-              required
-            ></v-text-field>
+        <!-- Selettore per scegliere la credenziale da verificare -->
+        <v-select
+          v-model="selectedCredentialIndex"
+          :items="formattedCredentialsHistory"
+          item-text="name"
+          item-value="id"
+          label="Seleziona Credenziale"
+          return-object
+        />
 
-            <v-select v-model="formData.role" :items="roles" label="Ruolo" required></v-select>
+        <!-- Mostra i dettagli della credenziale selezionata -->
+        <v-card v-if="selectedCredential">
+          <v-card-title>Dettagli della Credenziale Selezionata</v-card-title>
+          <v-card-text class="scrollable-card-text">
+            <pre>{{ JSON.stringify(selectedCredential, null, 2) }}</pre>
+          </v-card-text>
+        </v-card>
 
-            <v-btn :disabled="!isValid" color="primary" @click="registerUser"> Registrati </v-btn>
+        <!-- Pulsante per avviare la verifica della firma -->
+        <v-btn color="primary" @click="verifyCredential">Verifica Firma</v-btn>
 
-            <v-btn color="secondary" @click="generateKeys"> Genera Chiavi </v-btn>
-          </v-form>
+        <!-- Risultato della verifica -->
+        <v-alert v-if="verificationResult" type="success" dismissible>
+          Verifica completata con successo!<br />
+          Risultato: {{ verificationResult }}
+        </v-alert>
 
-          <!-- Visualizzazione chiavi generate -->
-          <div v-if="generatedKeys" class="generated-keys">
-            <h3>Chiavi Generate:</h3>
-            <p><strong>Chiave Pubblica:</strong> {{ generatedKeys.ecdh_public_key }}</p>
-            <p><strong>Keyring:</strong> {{ generatedKeys.keyring.ecdh }}</p>
-          </div>
-        </v-card-text>
-      </v-card>
-    </v-container>
+        <v-alert v-if="error" type="error" dismissible> Errore: {{ error }} </v-alert>
+      </v-container>
+    </v-main>
 
-    <!-- Footer -->
-    <v-footer class="pa-3" color="green" dark>
+    <v-footer class="pa-3" dark>
       <v-container>
         <p class="text-center white--text">&copy; 2024 Data Governance Web App</p>
       </v-container>
@@ -43,64 +57,94 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 
-const form = ref()
-const isValid = ref(false)
+// Dati delle credenziali storiche
+const credentialsHistory = ref<any[]>([])
 
-const formData = ref({
-  name: '',
-  email: '',
-  role: '',
+// Credenziale selezionata dall'utente
+const selectedCredentialIndex = ref<any>(null)
+
+// Risultati della verifica
+const verificationResult = ref<string | null>(null)
+const error = ref<string | null>(null)
+
+// Funzione per caricare le credenziali dal localStorage all'avvio della pagina
+onMounted(() => {
+  const storedCredentials = JSON.parse(localStorage.getItem('userCredentials') || '[]')
+  credentialsHistory.value = storedCredentials
 })
 
-const roles = ['Coltivatore', 'Produttore', 'Rivenditore', 'Verificatore']
+// Formatta la lista di credenziali per visualizzarle nel selettore con un nome chiaro
+const formattedCredentialsHistory = computed(() => {
+  return credentialsHistory.value.map((cred, index) => ({
+    id: cred.id,
+    name: `Credenziale #${index + 1}: ${cred.id}`,
+  }))
+})
 
-const rules = {
-  required: (value: string) => !!value || 'Campo obbligatorio',
-  email: (value: string) => /.+@.+\..+/.test(value) || 'Email non valida',
-}
+// Calcola la credenziale selezionata
+const selectedCredential = computed(() => {
+  return credentialsHistory.value.find((cred) => cred.id === selectedCredentialIndex.value?.id)
+})
 
-const generatedKeys = ref<null | { ecdh_public_key: string; keyring: { ecdh: string } }>(null)
+// Funzione per avviare la verifica della firma
+const verifyCredential = async () => {
+  if (!selectedCredential.value) {
+    alert('Seleziona una credenziale valida per la verifica!')
+    return
+  }
 
-async function generateKeys() {
+  const myvc = selectedCredential.value // La credenziale selezionata
+  // Chiamata all'API per verificare la firma
   try {
-    const response = await axios.get(
-      'https://apiroom.net/api/bogx2/genera-la-coppia-di-chiavi--prendndo-in-input-il-nome',
+    const response = await axios.post(
+      'https://apiroom.net/api/bogx2/verifica-firma-nokeys',
       {
-        params: {
-          data: JSON.stringify({ myName: formData.value.name }),
+        data: {
+          myvc, // La credenziale selezionata
+          Issuer: {
+            'ecdh public key':
+              'BIE5gnxbSlWRVJEzDr6Y4f19io481B2dY8USlE7smgjOMURFrw46fxu4ftR/y3ggevSfIN+/DAZd5EOIcmE6p64=', // Chiave pubblica dell'issuer
+          },
+        },
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          accept: 'application/json',
         },
       },
     )
-    generatedKeys.value = response.data[formData.value.name]
-  } catch (error) {
-    console.error('Errore nella generazione delle chiavi:', error)
-  }
-}
 
-function registerUser() {
-  if (form.value.validate()) {
-    console.log('Dati registrazione:', formData.value)
-    localStorage.setItem('user', JSON.stringify(formData.value))
+    // Verifica se la risposta è una stringa 'true'
+    const verificationStatus = response.data.output[0]
+    if (verificationStatus === 'true') {
+      verificationResult.value = 'Firma verificata con successo!'
+    } else {
+      verificationResult.value = 'La verifica della firma non è riuscita.'
+    }
+    error.value = null
+  } catch (err) {
+    // Gestisce gli errori
+    verificationResult.value = null
   }
 }
 </script>
 
 <style scoped>
-.generated-keys {
-  margin-top: 20px;
-  background-color: #f5f5f5;
-  padding: 10px;
-  border-radius: 5px;
-}
-
-.fill-height {
-  height: 100vh;
-}
-
 .v-footer {
   text-align: center;
+  background-color: #4caf50;
+  color: white;
+}
+
+.scrollable-card-text {
+  max-height: 600px; /* Imposta un'altezza massima per le credenziali */
+  overflow-y: auto; /* Permette lo scroll verticale */
+  background-color: #f5f5f5; /* Colore di sfondo per migliorare la leggibilità */
+  padding: 10px;
+  border-radius: 5px;
 }
 </style>

@@ -48,7 +48,12 @@ const credentialsHistory = ref<any[]>([])
 onMounted(() => {
   // Recupera le credenziali dell'utente dal localStorage
   const storedCredentials = JSON.parse(localStorage.getItem('userCredentials') || '[]')
+
+  // Associa le credenziali recuperate a credentialsHistory per visualizzarle
   credentialsHistory.value = storedCredentials
+
+  // Controlla che le credenziali siano state correttamente caricate
+  console.log(storedCredentials)
 })
 </script>
 

@@ -10,40 +10,51 @@
       <v-btn>
         <RouterLink to="/dashboard">Dashboard</RouterLink>
       </v-btn>
-      <v-btn>
-        <RouterLink to="/onboardingTab">Tabella</RouterLink>
-      </v-btn>
-      <v-btn>
-        <RouterLink to="/storico">Storico</RouterLink>
-      </v-btn>
     </v-app-bar>
+
     <!-- Main content area (scrollable) -->
     <v-main>
       <v-container>
-        <v-row>
-          <v-col cols="12">
-            <v-textarea
-              v-model="vcData"
-              label="Verifiable Credential JSON"
-              outlined
-              rows="10"
-            ></v-textarea>
-          </v-col>
-          <v-col cols="12">
-            <v-btn @click="verifySignature" color="primary">Verifica Firma</v-btn>
-          </v-col>
-          <v-col cols="12" v-if="verificationResult !== null">
-            <v-alert :type="verificationResult ? 'success' : 'error'" dismissible>
-              {{
-                verificationResult
-                  ? 'Firma verificata con successo!'
-                  : 'La verifica della firma è fallita.'
-              }}
-            </v-alert>
-          </v-col>
-        </v-row>
+        <v-card>
+          <v-card-title class="text-h6">Seleziona Credenziale</v-card-title>
+          <v-card-text>
+            <v-select
+              v-model="selectedCredentialIndex"
+              :items="credentialOptions"
+              label="Scegli una credenziale"
+            ></v-select>
+
+            <div v-if="selectedCredential">
+              <v-card-title>Credenziale #{{ getIndex(selectedCredential) }}</v-card-title>
+              <p><strong>ID:</strong> {{ selectedCredential.id }}</p>
+              <p><strong>Nome:</strong> {{ selectedCredential.credentialSubject.id }}</p>
+              <p v-if="selectedCredential.credentialSubject.cottonProductionKg">
+                <strong>Produzione di Cotone (Kg):</strong>
+                {{ selectedCredential.credentialSubject.cottonProductionKg }}
+              </p>
+              <p v-if="selectedCredential.credentialSubject.tshirtProduction">
+                <strong>Produzione di Magliette:</strong>
+                {{ selectedCredential.credentialSubject.tshirtProduction }}
+              </p>
+              <p>
+                <strong>Data di Emissione:</strong>
+                {{ new Date(selectedCredential.issuanceDate * 1000).toLocaleString() }}
+              </p>
+              <p><strong>Emittente:</strong> {{ selectedCredential.issuer }}</p>
+
+              <v-btn @click="verifyCredential" color="primary" class="mt-3">
+                Verifica Credenziale
+              </v-btn>
+            </div>
+          </v-card-text>
+
+          <v-card-text v-if="verificationResult">
+            <p><strong>Risultato Verifica:</strong> {{ verificationResult }}</p>
+          </v-card-text>
+        </v-card>
       </v-container>
     </v-main>
+
     <!-- Footer -->
     <v-footer class="pa-3" dark>
       <v-container>
@@ -59,30 +70,68 @@ import axios from 'axios'
 export default {
   data() {
     return {
-      vcData: '', // Dati della VC da verificare
-      verificationResult: null, // Risultato della verifica
+      credentialOptions: [],
+      selectedCredentialIndex: null,
+      verificationResult: null,
     }
   },
+  computed: {
+    selectedCredential() {
+      return this.credentialOptions[this.selectedCredentialIndex]?.fullCredential || null
+    },
+  },
+  created() {
+    this.loadCredentials()
+  },
   methods: {
-    async verifySignature() {
-      try {
-        // Codifica i dati VC in una stringa JSON
-        const data = encodeURIComponent(JSON.stringify({ 'my-vc': JSON.parse(this.vcData) }))
+    loadCredentials() {
+      const credentials = JSON.parse(localStorage.getItem('userCredentials') || '[]')
 
-        // Esegui la chiamata GET all'API
-        const response = await axios.get(
-          `https://apiroom.net/api/bogx2/verifica-firma?data=${data}`,
-        )
-
-        // Verifica la risposta della API
-        if (response.data === 'true') {
-          this.verificationResult = true // Firma valida
-        } else {
-          this.verificationResult = false // Firma non valida
+      this.credentialOptions = credentials.map((credential, index) => {
+        const vc = credential['my-vc']
+        return {
+          label: `ID: ${vc.id} - Cotton: ${vc.credentialSubject.cottonProductionKg} Kg`, // Stringa semplice
+          value: index,
+          fullCredential: vc,
         }
+      })
+    },
+    getIndex(selectedCredential) {
+      return (
+        this.credentialOptions.findIndex((option) => option.fullCredential === selectedCredential) +
+        1
+      )
+    },
+
+    // Verifica firma credenziale
+    async verifyCredential() {
+      const payload = {
+        data: {
+          'my-vc': this.selectedCredential,
+          Issuer: {
+            'ecdh public key': this.selectedCredential.proof.verificationMethod,
+          },
+        },
+        keys: {},
+      }
+
+      try {
+        // Chiamata API per la verifica della credenziale con axios
+        const response = await axios.post(
+          'https://apiroom.net/api/bogx2/verifica-firma-nokeys',
+          payload,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+          },
+        )
+        //salva il risulato dal array di output
+        this.verificationResult = response.data.output[0]
       } catch (error) {
-        console.error('Errore nella verifica della firma:', error)
-        this.verificationResult = false // Errore nella verifica
+        console.error('Errore durante la verifica:', error)
+        this.verificationResult = 'Errore durante la verifica'
       }
     },
   },
@@ -90,20 +139,31 @@ export default {
 </script>
 
 <style scoped>
-.v-card {
-  border-radius: 8px;
-}
-
-pre {
-  background-color: #f5f5f5;
-  padding: 16px;
-  border-radius: 4px;
-  font-size: 14px;
-  overflow-x: auto;
-}
 .v-footer {
   text-align: center;
   background-color: #4caf50;
   color: white;
+}
+
+.v-main {
+  overflow-y: auto;
+  height: calc(100vh - 64px);
+}
+
+.v-card-title {
+  font-weight: bold;
+}
+
+.v-btn {
+  min-width: 0;
+  padding: 6px 10px;
+}
+
+.logo {
+  margin-right: 10px;
+}
+
+.v-app-bar {
+  box-shadow: none;
 }
 </style>
