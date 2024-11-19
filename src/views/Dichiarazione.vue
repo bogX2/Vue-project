@@ -154,11 +154,7 @@ export default defineComponent({
               cottonProductionKg: this.cottonProductionKg,
             },
           },
-          PublicKeyUrl: storedUser.publicKey, // setto il metodo di verifica
-        }
-
-        const keysStructure = {
-          Alice: {
+          Issuer: {
             keyring: {
               ecdh: storedUser.privateKey,
             },
@@ -168,13 +164,16 @@ export default defineComponent({
 
         try {
           // Chiamata API per firmare la dichiarazione
-          const response = await axios.get(
-            'https://apiroom.net/api/bogx2/Sign-the-VC1',
-
+          const response = await axios.post(
+            'https://apiroom.net/api/bogx2/firma-nokeys',
             {
-              params: {
-                data: JSON.stringify(credential),
-                keys: JSON.stringify(keysStructure),
+              data: credential,
+              keys: {},
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
               },
             },
           )

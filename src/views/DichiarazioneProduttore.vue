@@ -153,12 +153,7 @@ export default defineComponent({
               tshirtProduction: this.tshirtProduction, // Cambiato per riflettere la produzione di magliette
             },
           },
-          PublicKeyUrl: storedUser.publicKey,
-        }
-
-        // Prepara la struttura delle chiavi per la firma
-        const keysStructure = {
-          Alice: {
+          Issuer: {
             keyring: {
               ecdh: storedUser.privateKey,
             },
@@ -168,12 +163,16 @@ export default defineComponent({
 
         try {
           // Chiamata API per firmare la dichiarazione
-          const response = await axios.get(
-            'https://apiroom.net/api/bogx2/utente-firma-dichiarazione-con-keys-del-appweb',
+          const response = await axios.post(
+            'https://apiroom.net/api/bogx2/firma-nokeys',
             {
-              params: {
-                data: JSON.stringify(credential),
-                keys: JSON.stringify(keysStructure),
+              data: credential,
+              keys: {},
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
               },
             },
           )
