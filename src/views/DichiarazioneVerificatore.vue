@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <!-- Header con Navbar in linea -->
+    <!-- Header con Navbar -->
     <v-app-bar app color="white" dark>
       <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="80" height="80" />
       <v-spacer></v-spacer>
@@ -12,7 +12,7 @@
       </v-btn>
     </v-app-bar>
 
-    <!-- Main content area (scrollable) -->
+    <!-- Main content area -->
     <v-main>
       <v-container>
         <v-card>
@@ -42,14 +42,41 @@
               </p>
               <p><strong>Emittente:</strong> {{ selectedCredential.issuer }}</p>
 
-              <v-btn @click="verifyCredential" color="primary" class="mt-3">
-                Verifica Credenziale
+              <v-btn @click="verifyFirstCredential" color="primary" class="mt-3">
+                Verifica Prima Credenziale
               </v-btn>
             </div>
           </v-card-text>
 
-          <v-card-text v-if="verificationResult">
-            <p><strong>Risultato Verifica:</strong> {{ verificationResult }}</p>
+          <v-card-text v-if="firstVerificationResult">
+            <p><strong>Risultato Prima Verifica:</strong> {{ firstVerificationResult }}</p>
+          </v-card-text>
+
+          <div v-if="firstVerificationResult === 'Verifica riuscita' && secondCredential">
+            <v-card-title class="text-h6">Seconda Credenziale</v-card-title>
+            <p><strong>ID:</strong> {{ secondCredential.id }}</p>
+            <p><strong>Nome:</strong> {{ secondCredential.credentialSubject.id }}</p>
+            <p v-if="secondCredential.credentialSubject.cottonProductionKg">
+              <strong>Produzione di Cotone (Kg):</strong>
+              {{ secondCredential.credentialSubject.cottonProductionKg }}
+            </p>
+            <p v-if="secondCredential.credentialSubject.tshirtProduction">
+              <strong>Produzione di Magliette:</strong>
+              {{ secondCredential.credentialSubject.tshirtProduction }}
+            </p>
+            <p>
+              <strong>Data di Emissione:</strong>
+              {{ new Date(secondCredential.issuanceDate * 1000).toLocaleString() }}
+            </p>
+            <p><strong>Emittente:</strong> {{ secondCredential.issuer }}</p>
+
+            <v-btn @click="verifySecondCredential" color="secondary" class="mt-3">
+              Verifica Seconda Credenziale
+            </v-btn>
+          </div>
+
+          <v-card-text v-if="secondVerificationResult">
+            <p><strong>Risultato Seconda Verifica:</strong> {{ secondVerificationResult }}</p>
           </v-card-text>
         </v-card>
       </v-container>
@@ -72,12 +99,19 @@ export default {
     return {
       credentialOptions: [],
       selectedCredentialIndex: null,
-      verificationResult: null,
+      firstVerificationResult: null, // Risultato della prima verifica
+      secondVerificationResult: null, // Risultato della seconda verifica
     }
   },
   computed: {
     selectedCredential() {
       return this.credentialOptions[this.selectedCredentialIndex]?.fullCredential || null
+    },
+    secondCredential() {
+      return this.credentialOptions.find(
+        (_, index) =>
+          index !== this.selectedCredentialIndex && this.selectedCredentialIndex !== null,
+      )?.fullCredential
     },
   },
   created() {
@@ -85,16 +119,28 @@ export default {
   },
   methods: {
     loadCredentials() {
-      const credentials = JSON.parse(localStorage.getItem('userCredentials') || '[]')
+      const rawCredentials = localStorage.getItem('userCredentials') || '[]'
+      let parsedCredentials
 
-      this.credentialOptions = credentials.map((credential, index) => {
-        const vc = credential['my-vc']
-        return {
-          label: `ID: ${vc.id} - Cotton: ${vc.credentialSubject.cottonProductionKg} Kg`, // Stringa semplice
-          value: index,
-          fullCredential: vc,
-        }
-      })
+      try {
+        parsedCredentials = JSON.parse(rawCredentials)
+      } catch (error) {
+        console.error('Errore nel parsing delle credenziali:', error)
+        parsedCredentials = []
+      }
+
+      this.credentialOptions = parsedCredentials
+        .map((credential, index) => {
+          const vc = credential['my-vc']
+          return vc && vc.proof
+            ? {
+                label: `ID: ${vc.id} - Cotton: ${vc.credentialSubject.cottonProductionKg} Kg`,
+                value: index,
+                fullCredential: vc,
+              }
+            : null
+        })
+        .filter((option) => option !== null)
     },
     getIndex(selectedCredential) {
       return (
@@ -103,8 +149,7 @@ export default {
       )
     },
 
-    // Verifica firma credenziale
-    async verifyCredential() {
+    async verifyFirstCredential() {
       const payload = {
         data: {
           'my-vc': this.selectedCredential,
@@ -116,7 +161,6 @@ export default {
       }
 
       try {
-        // Chiamata API per la verifica della credenziale con axios
         const response = await axios.post(
           'https://apiroom.net/api/bogx2/verifica-firma-nokeys',
           payload,
@@ -127,11 +171,49 @@ export default {
             },
           },
         )
-        //salva il risulato dal array di output
-        this.verificationResult = response.data.output[0]
+        this.firstVerificationResult = response.data.output[0]
+          ? 'Verifica riuscita'
+          : 'Verifica fallita'
       } catch (error) {
         console.error('Errore durante la verifica:', error)
-        this.verificationResult = 'Errore durante la verifica'
+        this.firstVerificationResult = 'Errore durante la verifica'
+      }
+    },
+
+    async verifySecondCredential() {
+      if (this.firstVerificationResult !== 'Verifica riuscita') {
+        this.secondVerificationResult =
+          'Non puoi verificare la seconda credenziale senza verificare la prima'
+        return
+      }
+
+      const payload = {
+        data: {
+          'my-vc': this.secondCredential,
+          Issuer: {
+            'ecdh public key': this.secondCredential.proof.verificationMethod,
+          },
+        },
+        keys: {},
+      }
+
+      try {
+        const response = await axios.post(
+          'https://apiroom.net/api/bogx2/verifica-firma-nokeys',
+          payload,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+          },
+        )
+        this.secondVerificationResult = response.data.output[0]
+          ? 'Verifica riuscita'
+          : 'Verifica fallita'
+      } catch (error) {
+        console.error('Errore durante la verifica:', error)
+        this.secondVerificationResult = 'Errore durante la verifica'
       }
     },
   },
@@ -147,7 +229,6 @@ export default {
 
 .v-main {
   overflow-y: auto;
-  height: calc(100vh - 64px);
 }
 
 .v-card-title {
