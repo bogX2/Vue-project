@@ -36,14 +36,6 @@
               Genera Certificazione
             </v-btn>
 
-            <!-- JSON stampato -->
-            <v-card class="mt-3" v-if="certificazione">
-              <v-card-title>Certificazione Generata</v-card-title>
-              <v-card-text>
-                <pre>{{ certificazione }}</pre>
-              </v-card-text>
-            </v-card>
-
             <!-- Pulsante per firmare la certificazione -->
             <v-btn
               color="primary"
@@ -53,6 +45,14 @@
             >
               Firma Certificazione
             </v-btn>
+
+            <!-- JSON stampato -->
+            <v-card class="mt-3" v-if="certificazione">
+              <v-card-title>Certificazione Generata</v-card-title>
+              <v-card-text>
+                <pre>{{ certificazione }}</pre>
+              </v-card-text>
+            </v-card>
 
             <!-- Stampa dell'output della chiamata API -->
             <v-card class="mt-3" v-if="certificationResponse">
@@ -86,6 +86,8 @@ export default defineComponent({
       certificationResponse: '' as string,
       isCertificationGenerated: false,
       isCertificationSigned: false,
+      issuanceTimestamp: Math.floor(Date.now() / 1000), // Timestamp attuale
+      credentialId: '', // ID della credenziale
     }
   },
   methods: {
@@ -96,20 +98,21 @@ export default defineComponent({
       // Recupera l'ID dell'utente dal localStorage
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
       const verifierId = storedUser.id || 'did:supplychain:verificatore001' // Fallback se non è trovato
+      // Genera un ID univoco per la credenziale
+      this.credentialId = `http://example.supplychain/credentials/${Math.floor(Math.random() * 1000)}`
 
       const certificazione = {
-        'new-vc': {
+        'my-vc': {
           '@context': [
             'https://www.w3.org/2018/credentials/v1',
             'https://www.w3.org/2018/credentials/examples/v1',
           ],
-          id: `http://example.supplychain/credentials/audit-${Math.floor(Math.random() * 1000)}`,
+          id: this.credentialId,
           type: ['VerifiableCredential', 'AuditCredential'],
           issuer: verifierId, // Usa l'ID del verificatore
-          issuanceDate: new Date().toISOString(),
+          issuanceDate: currentTimestamp,
           credentialSubject: {
-            id: 'did:supplychain:coltivatore123',
-            verifiedCredential: 'http://example.supplychain/credentials/001', // Puoi modificarlo per fare riferimento alla credenziale verificata
+            id: ['did:supplychain:coltivatore1', 'did:supplychain:produttore1'],
             sustainabilityClaim: {
               status: 'Certified',
               details:
@@ -126,21 +129,31 @@ export default defineComponent({
       this.isCertificationGenerated = true
     },
 
-    // Funzione per firmare la certificazione
+    // Funzione per firmare la dichiarazione certificazione di sostenibilita
     async firmaCertificazione() {
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+      const verifierId = storedUser.id || 'did:supplychain:verificatore001' // Fallback se non è trovato
 
       if (storedUser && storedUser.publicKey && storedUser.privateKey) {
-        const credential = JSON.parse(this.certificazione)['new-vc']
-
-        const payload = {
-          'new-vc': {
-            ...credential,
-            proof: {
-              type: 'Zenroom vv4.36.0',
-              verificationMethod: storedUser.publicKey,
-              proofPurpose: 'authenticate',
-              jws: 'mocked-signature', // Qui dovrebbe andare la firma reale
+        const credential = {
+          'my-vc': {
+            '@context': [
+              'https://www.w3.org/2018/credentials/v1',
+              'https://www.w3.org/2018/credentials/examples/v1',
+            ],
+            id: this.credentialId,
+            type: ['VerifiableCredential', 'AuditCredential'],
+            issuer: verifierId, // Usa l'ID del verificatore
+            issuanceDate: this.issuanceTimestamp,
+            credentialSubject: {
+              id: ['did:supplychain:coltivatore1', 'did:supplychain:produttore1'],
+              verifiedCredential: 'http://example.supplychain/credentials/001', // Puoi modificarlo per fare riferimento alla credenziale verificata
+              sustainabilityClaim: {
+                status: 'Certified',
+                details:
+                  'La produzione di cotone è stata verificata come sostenibile secondo gli standard della filiera',
+                verificationDate: this.issuanceTimestamp,
+              },
             },
           },
           Issuer: {
@@ -156,7 +169,7 @@ export default defineComponent({
           const response = await axios.post(
             'https://apiroom.net/api/bogx2/firma-nokeys',
             {
-              data: payload,
+              data: credential,
               keys: {},
             },
             {
@@ -175,6 +188,15 @@ export default defineComponent({
 
           // Nasconde il pulsante di firma
           this.isCertificationSigned = true
+
+          // Recupera le credenziali esistenti dal localStorage o inizializza un array vuoto
+          let userCredentials = JSON.parse(localStorage.getItem('userCredentials') || '[]')
+
+          // Aggiungi la nuova credenziale all'array
+          userCredentials.push(response.data)
+
+          // Salva l'array aggiornato nel localStorage
+          localStorage.setItem('userCredentials', JSON.stringify(userCredentials))
         } catch (error) {
           console.error('Errore durante la firma:', error)
           alert('Errore durante la firma della certificazione.')
