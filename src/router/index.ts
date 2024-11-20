@@ -9,6 +9,7 @@ import DichiarazioneVerificatore from '../views/DichiarazioneVerificatore.vue'
 import DichiarazioneProduttore from '@/views/DichiarazioneProduttore.vue'
 import Login from '@/views/Login.vue'
 import Storico from '@/views/Storico.vue'
+import Certificazione from '@/views/Certificato.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -52,6 +53,11 @@ const router = createRouter({
       path: '/dichiarazioneProduttore',
       name: 'dichiarazioneProduttore',
       component: DichiarazioneProduttore,
+    },
+    {
+      path: '/certificazione',
+      name: 'certificazione',
+      component: Certificazione,
     },
     {
       path: '/storico',

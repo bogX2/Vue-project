@@ -38,7 +38,9 @@
           <!-- Prima card -->
           <v-col cols="12" md="6">
             <v-card outlined>
-              <v-card-title class="text-h6">Dettagli Credenziale Selezionata</v-card-title>
+              <v-card-title v-if="selectedCredential" class="text-h6"
+                >Prima Credenziale</v-card-title
+              >
               <v-card-text v-if="selectedCredential">
                 <p><strong>ID:</strong> {{ selectedCredential.id }}</p>
                 <p><strong>Nome:</strong> {{ selectedCredential.credentialSubject.id }}</p>
@@ -136,20 +138,45 @@
                   Verifica Logica di Business
                 </v-btn>
               </v-card-text>
-              <v-card-text v-if="businessLogicResult">
-                <p><strong>Risultato Verifica Logica di Business:</strong></p>
-                <ul>
-                  <li>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <!-- Risultato Verifica Logica di Business -->
+        <v-row v-if="businessLogicResult">
+          <v-col cols="12">
+            <v-card class="mt-3 pa-4">
+              <v-card-title class="text-h6">Risultato Verifica Logica di Business</v-card-title>
+              <v-card-text>
+                <v-row>
+                  <v-col cols="12" sm="4">
                     <strong>Produzione di Cotone:</strong> {{ businessLogicResult.cottonCheck }}
-                  </li>
-                  <li>
+                  </v-col>
+                  <v-col cols="12" sm="4">
                     <strong>Produzione di Magliette:</strong> {{ businessLogicResult.tshirtCheck }}
-                  </li>
-                  <li>
+                  </v-col>
+                  <v-col cols="12" sm="4">
                     <strong>Ordine Temporale:</strong> {{ businessLogicResult.timestampCheck }}
-                  </li>
-                </ul>
+                  </v-col>
+                </v-row>
               </v-card-text>
+
+              <!-- Pulsante per emettere certificazione -->
+              <v-btn
+                v-if="
+                  businessLogicResult &&
+                  businessLogicResult.cottonCheck === 'Valido' &&
+                  businessLogicResult.tshirtCheck === 'Valido' &&
+                  businessLogicResult.timestampCheck === 'Valido'
+                "
+                color="success"
+                class="mt-4"
+                block
+              >
+                <RouterLink to="/certificazione" class="text-white"
+                  >Emetti Certificazione</RouterLink
+                >
+              </v-btn>
             </v-card>
           </v-col>
         </v-row>
