@@ -50,6 +50,7 @@
               class="mt-3 ml-3"
               @click="firmaDichiarazione"
               v-if="verifiableCredential"
+              :disabled="isCredentialSigned"
             >
               Firma la Dichiarazione
             </v-btn>
@@ -96,6 +97,7 @@ export default defineComponent({
       credentialId: '', // ID della credenziale
       issuanceTimestamp: Math.floor(Date.now() / 1000), // Timestamp attuale
       isCredentialGenerated: false, // Variabile per tracciare se la credenziale è stata generata
+      isCredentialSigned: false, // Variabile per tracciare se la credenziale è stata firmata
     }
   },
   methods: {
@@ -177,6 +179,8 @@ export default defineComponent({
             },
           )
 
+          // Nasconde il pulsante di firma
+          this.isCredentialSigned = true
           // Memorizza il risultato della chiamata API
           this.apiResponse = JSON.stringify(response.data, null, 2)
 

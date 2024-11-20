@@ -17,6 +17,7 @@
         <RouterLink to="/storico">Storico</RouterLink>
       </v-btn>
     </v-app-bar>
+
     <!-- Main content area (scrollable) -->
     <v-main>
       <v-container>
@@ -50,6 +51,7 @@
               class="mt-3 ml-3"
               @click="firmaDichiarazione"
               v-if="verifiableCredential"
+              :disabled="isCredentialSigned"
             >
               Firma la Dichiarazione
             </v-btn>
@@ -96,6 +98,7 @@ export default defineComponent({
       credentialId: '', // ID della credenziale
       issuanceTimestamp: Math.floor(Date.now() / 1000), // Timestamp attuale
       isCredentialGenerated: false, // Variabile per tracciare se la credenziale è stata generata
+      isCredentialSigned: false, // Variabile per tracciare se la credenziale è stata firmata
     }
   },
   methods: {
@@ -134,7 +137,6 @@ export default defineComponent({
     },
 
     // Funzione per firmare la dichiarazione
-    // Funzione per firmare la dichiarazione e salvarla nel localStorage
     async firmaDichiarazione() {
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
 
@@ -183,6 +185,9 @@ export default defineComponent({
 
           console.log('Credenziale firmata:', response.data)
           alert('Dichiarazione firmata con successo!')
+
+          // Nasconde il pulsante di firma
+          this.isCredentialSigned = true
 
           // Recupera le credenziali esistenti dal localStorage o inizializza un array vuoto
           let userCredentials = JSON.parse(localStorage.getItem('userCredentials') || '[]')

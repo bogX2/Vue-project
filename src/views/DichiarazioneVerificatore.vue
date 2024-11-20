@@ -10,12 +10,19 @@
       <v-btn>
         <RouterLink to="/dashboard">Dashboard</RouterLink>
       </v-btn>
+      <v-btn>
+        <RouterLink to="/onboardingTab">Tabella</RouterLink>
+      </v-btn>
+      <v-btn>
+        <RouterLink to="/storico">Storico</RouterLink>
+      </v-btn>
     </v-app-bar>
 
     <!-- Main content area -->
     <v-main>
       <v-container>
-        <v-card>
+        <!-- Selezione credenziale -->
+        <v-card outlined class="mb-4">
           <v-card-title class="text-h6">Seleziona Credenziale</v-card-title>
           <v-card-text>
             <v-select
@@ -23,62 +30,129 @@
               :items="credentialOptions"
               label="Scegli una credenziale"
             ></v-select>
-
-            <div v-if="selectedCredential">
-              <v-card-title>Credenziale #{{ getIndex(selectedCredential) }}</v-card-title>
-              <p><strong>ID:</strong> {{ selectedCredential.id }}</p>
-              <p><strong>Nome:</strong> {{ selectedCredential.credentialSubject.id }}</p>
-              <p v-if="selectedCredential.credentialSubject.cottonProductionKg">
-                <strong>Produzione di Cotone (Kg):</strong>
-                {{ selectedCredential.credentialSubject.cottonProductionKg }}
-              </p>
-              <p v-if="selectedCredential.credentialSubject.tshirtProduction">
-                <strong>Produzione di Magliette:</strong>
-                {{ selectedCredential.credentialSubject.tshirtProduction }}
-              </p>
-              <p>
-                <strong>Data di Emissione:</strong>
-                {{ new Date(selectedCredential.issuanceDate * 1000).toLocaleString() }}
-              </p>
-              <p><strong>Emittente:</strong> {{ selectedCredential.issuer }}</p>
-
-              <v-btn @click="verifyFirstCredential" color="primary" class="mt-3">
-                Verifica Prima Credenziale
-              </v-btn>
-            </div>
-          </v-card-text>
-
-          <v-card-text v-if="firstVerificationResult">
-            <p><strong>Risultato Prima Verifica:</strong> {{ firstVerificationResult }}</p>
-          </v-card-text>
-
-          <div v-if="firstVerificationResult === 'Verifica riuscita' && secondCredential">
-            <v-card-title class="text-h6">Seconda Credenziale</v-card-title>
-            <p><strong>ID:</strong> {{ secondCredential.id }}</p>
-            <p><strong>Nome:</strong> {{ secondCredential.credentialSubject.id }}</p>
-            <p v-if="secondCredential.credentialSubject.cottonProductionKg">
-              <strong>Produzione di Cotone (Kg):</strong>
-              {{ secondCredential.credentialSubject.cottonProductionKg }}
-            </p>
-            <p v-if="secondCredential.credentialSubject.tshirtProduction">
-              <strong>Produzione di Magliette:</strong>
-              {{ secondCredential.credentialSubject.tshirtProduction }}
-            </p>
-            <p>
-              <strong>Data di Emissione:</strong>
-              {{ new Date(secondCredential.issuanceDate * 1000).toLocaleString() }}
-            </p>
-            <p><strong>Emittente:</strong> {{ secondCredential.issuer }}</p>
-
-            <v-btn @click="verifySecondCredential" color="secondary" class="mt-3">
-              Verifica Seconda Credenziale
-            </v-btn>
-          </div>
-
-          <v-card-text v-if="secondVerificationResult">
-            <p><strong>Risultato Seconda Verifica:</strong> {{ secondVerificationResult }}</p>
           </v-card-text>
         </v-card>
+
+        <!-- Card per credenziali -->
+        <v-row>
+          <!-- Prima card -->
+          <v-col cols="12" md="6">
+            <v-card outlined>
+              <v-card-title class="text-h6">Dettagli Credenziale Selezionata</v-card-title>
+              <v-card-text v-if="selectedCredential">
+                <p><strong>ID:</strong> {{ selectedCredential.id }}</p>
+                <p><strong>Nome:</strong> {{ selectedCredential.credentialSubject.id }}</p>
+                <p v-if="selectedCredential.credentialSubject.cottonProductionKg">
+                  <strong>Produzione di Cotone (Kg):</strong>
+                  {{ selectedCredential.credentialSubject.cottonProductionKg }}
+                </p>
+                <p v-if="selectedCredential.credentialSubject.tshirtProduction">
+                  <strong>Produzione di Magliette:</strong>
+                  {{ selectedCredential.credentialSubject.tshirtProduction }}
+                </p>
+                <p>
+                  <strong>Data di Emissione:</strong>
+                  {{ new Date(selectedCredential.issuanceDate * 1000).toLocaleString() }}
+                </p>
+                <p><strong>Emittente:</strong> {{ selectedCredential.issuer }}</p>
+
+                <v-btn @click="verifyFirstCredential" color="primary" class="mt-3">
+                  Verifica Prima Credenziale
+                </v-btn>
+              </v-card-text>
+              <v-card-text v-if="firstVerificationResult">
+                <p><strong>Risultato Prima Verifica:</strong> {{ firstVerificationResult }}</p>
+              </v-card-text>
+            </v-card>
+          </v-col>
+
+          <!-- Seconda card -->
+          <v-col
+            cols="12"
+            md="6"
+            v-if="firstVerificationResult === 'Verifica riuscita' && secondCredential"
+          >
+            <v-card outlined>
+              <v-card-title class="text-h6">Seconda Credenziale</v-card-title>
+              <v-card-text>
+                <p><strong>ID:</strong> {{ secondCredential.id }}</p>
+                <p><strong>Nome:</strong> {{ secondCredential.credentialSubject.id }}</p>
+                <p v-if="secondCredential.credentialSubject.cottonProductionKg">
+                  <strong>Produzione di Cotone (Kg):</strong>
+                  {{ secondCredential.credentialSubject.cottonProductionKg }}
+                </p>
+                <p v-if="secondCredential.credentialSubject.tshirtProduction">
+                  <strong>Produzione di Magliette:</strong>
+                  {{ secondCredential.credentialSubject.tshirtProduction }}
+                </p>
+                <p>
+                  <strong>Data di Emissione:</strong>
+                  {{ new Date(secondCredential.issuanceDate * 1000).toLocaleString() }}
+                </p>
+                <p><strong>Emittente:</strong> {{ secondCredential.issuer }}</p>
+
+                <v-btn @click="verifySecondCredential" color="secondary" class="mt-3">
+                  Verifica Seconda Credenziale
+                </v-btn>
+              </v-card-text>
+              <v-card-text v-if="secondVerificationResult">
+                <p><strong>Risultato Seconda Verifica:</strong> {{ secondVerificationResult }}</p>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <!-- Controllo logica di business -->
+        <v-row
+          v-if="
+            firstVerificationResult === 'Verifica riuscita' &&
+            secondVerificationResult === 'Verifica riuscita'
+          "
+        >
+          <v-col cols="12">
+            <v-card outlined>
+              <v-card-title class="text-h6">Controllo Logica di Business</v-card-title>
+              <v-card-text>
+                <v-text-field
+                  label="Minimo Kg di Cotone"
+                  v-model.number="minCottonKg"
+                  type="number"
+                  required
+                ></v-text-field>
+                <v-text-field
+                  label="Massimo Kg di Cotone"
+                  v-model.number="maxCottonKg"
+                  type="number"
+                  required
+                ></v-text-field>
+                <v-text-field
+                  label="Tasso di Conversione (Kg Cotone a Magliette)"
+                  v-model.number="conversionRate"
+                  type="number"
+                  required
+                ></v-text-field>
+
+                <v-btn @click="verifyBusinessLogic" color="success" class="mt-3">
+                  Verifica Logica di Business
+                </v-btn>
+              </v-card-text>
+              <v-card-text v-if="businessLogicResult">
+                <p><strong>Risultato Verifica Logica di Business:</strong></p>
+                <ul>
+                  <li>
+                    <strong>Produzione di Cotone:</strong> {{ businessLogicResult.cottonCheck }}
+                  </li>
+                  <li>
+                    <strong>Produzione di Magliette:</strong> {{ businessLogicResult.tshirtCheck }}
+                  </li>
+                  <li>
+                    <strong>Ordine Temporale:</strong> {{ businessLogicResult.timestampCheck }}
+                  </li>
+                </ul>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
       </v-container>
     </v-main>
 
@@ -101,6 +175,10 @@ export default {
       selectedCredentialIndex: null,
       firstVerificationResult: null, // Risultato della prima verifica
       secondVerificationResult: null, // Risultato della seconda verifica
+      minCottonKg: 0,
+      maxCottonKg: 0,
+      conversionRate: 0,
+      businessLogicResult: null,
     }
   },
   computed: {
@@ -214,6 +292,35 @@ export default {
       } catch (error) {
         console.error('Errore durante la verifica:', error)
         this.secondVerificationResult = 'Errore durante la verifica'
+      }
+    },
+
+    verifyBusinessLogic() {
+      const cottonKg = this.selectedCredential.credentialSubject.cottonProductionKg
+      const tshirtProduction = this.secondCredential.credentialSubject.tshirtProduction
+      const secondTimestamp = this.secondCredential.issuanceDate
+
+      // Controllo se la produzione di cotone è nel range
+      const cottonCheck =
+        cottonKg >= this.minCottonKg && cottonKg <= this.maxCottonKg ? 'Valido' : 'Non Valido'
+
+      // Calcolo del range per le magliette
+      const minTshirts = Math.floor(this.minCottonKg * this.conversionRate)
+      const maxTshirts = Math.ceil(this.maxCottonKg * this.conversionRate)
+
+      // Controllo se la produzione di magliette è nel range
+      const tshirtCheck =
+        tshirtProduction >= minTshirts && tshirtProduction <= maxTshirts ? 'Valido' : 'Non Valido'
+
+      // Controllo dell'ordine temporale
+      const timestampCheck =
+        this.selectedCredential.issuanceDate < secondTimestamp ? 'Valido' : 'Non Valido'
+
+      // Salvataggio dei risultati
+      this.businessLogicResult = {
+        cottonCheck,
+        tshirtCheck,
+        timestampCheck,
       }
     },
   },
