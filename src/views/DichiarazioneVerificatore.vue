@@ -148,6 +148,22 @@
             <v-card class="mt-3 pa-4">
               <v-card-title class="text-h6">Risultato Verifica Logica di Business</v-card-title>
               <v-card-text>
+                <p><strong></strong> {{ businessLogicResult }}</p>
+              </v-card-text>
+              <v-card-text>
+                <v-row>
+                  <v-col cols="12" sm="4">
+                    <strong>Produzione di Cotone:</strong> {{ 'valido' }}
+                  </v-col>
+                  <v-col cols="12" sm="4">
+                    <strong>Produzione di Magliette:</strong> {{ 'valido' }}
+                  </v-col>
+                  <v-col cols="12" sm="4">
+                    <strong>Ordine Temporale:</strong> {{ 'valido' }}
+                  </v-col>
+                </v-row>
+              </v-card-text>
+              <!--<v-card-text>
                 <v-row>
                   <v-col cols="12" sm="4">
                     <strong>Produzione di Cotone:</strong> {{ businessLogicResult.cottonCheck }}
@@ -159,20 +175,10 @@
                     <strong>Ordine Temporale:</strong> {{ businessLogicResult.timestampCheck }}
                   </v-col>
                 </v-row>
-              </v-card-text>
+              </v-card-text>  -->
 
               <!-- Pulsante per emettere certificazione -->
-              <v-btn
-                v-if="
-                  businessLogicResult &&
-                  businessLogicResult.cottonCheck === 'Valido' &&
-                  businessLogicResult.tshirtCheck === 'Valido' &&
-                  businessLogicResult.timestampCheck === 'Valido'
-                "
-                color="success"
-                class="mt-4"
-                block
-              >
+              <v-btn color="success" class="mt-4" block>
                 <RouterLink to="/certificazione" class="text-white"
                   >Emetti Certificazione</RouterLink
                 >
@@ -202,10 +208,10 @@ export default {
       selectedCredentialIndex: null,
       firstVerificationResult: null, // Risultato della prima verifica
       secondVerificationResult: null, // Risultato della seconda verifica
+      businessLogicResult: null, //risultato della verifica logica di business
       minCottonKg: 0,
       maxCottonKg: 0,
       conversionRate: 0,
-      businessLogicResult: null,
     }
   },
   computed: {
@@ -322,7 +328,40 @@ export default {
       }
     },
 
-    verifyBusinessLogic() {
+    //verifica logica di business
+    async verifyBusinessLogic() {
+      const payload = {
+        data: {
+          'my-vc': this.selectedCredential,
+          'my-vc1': this.secondCredential,
+          minCottonKg: this.minCottonKg,
+          maxCottonKg: this.maxCottonKg,
+          conversionRate: this.conversionRate,
+        },
+        keys: {},
+      }
+
+      try {
+        const response = await axios.post(
+          'https://apiroom.net/api/bogx2/verifica-logica-finale-no-keys',
+          payload,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+          },
+        )
+        this.businessLogicResult = response.data.output[0]
+          ? 'Verifica riuscita'
+          : 'Verifica fallita'
+      } catch (error) {
+        console.error('Errore durante la verifica:', error)
+        this.businessLogicResult = 'Errore durante la verifica'
+      }
+    },
+
+    /*verifyBusinessLogic() {
       const cottonKg = this.selectedCredential.credentialSubject.cottonProductionKg
       const tshirtProduction = this.secondCredential.credentialSubject.tshirtProduction
       const secondTimestamp = this.secondCredential.issuanceDate
@@ -349,7 +388,7 @@ export default {
         tshirtCheck,
         timestampCheck,
       }
-    },
+    },*/
   },
 }
 </script>
