@@ -12,9 +12,9 @@ localStorage.clear()
       fluid
     >
       <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-      <v-card elevation="2" class="pa-6 text-center" max-width="600">
+      <v-card elevation="2" class="pa-6 mt-5 text-center" max-width="800">
         <h1>Benvenuto nella Web App di Data Governance</h1>
-        <p>Gestisci le tue credenziali in modo sicuro e decentralizzato.</p>
+        <p>Gestisci le tue credenziali in modo sicuro e trasparente.</p>
 
         <v-btn-group class="mt-4">
           <RouterLink to="/register">

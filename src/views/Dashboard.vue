@@ -7,10 +7,10 @@
       </v-toolbar-title>
       <v-spacer></v-spacer>
       <v-btn>
-        <RouterLink to="/onboardingTab">Tabella</RouterLink>
+        <RouterLink to="/">Home</RouterLink>
       </v-btn>
       <v-btn>
-        <RouterLink to="/storico">Storico</RouterLink>
+        <RouterLink to="/onboardingTab">Tabella</RouterLink>
       </v-btn>
       <v-btn @click="logoutUser" color="error">Logout</v-btn>
     </v-app-bar>

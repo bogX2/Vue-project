@@ -11,7 +11,7 @@
         <RouterLink to="/onboardingTab">Tabella</RouterLink>
       </v-btn>
       <v-btn>
-        <RouterLink to="/dashboard">Dashboard</RouterLink>
+        <RouterLink to="/storico">Storico</RouterLink>
       </v-btn>
     </v-app-bar>
 
@@ -180,6 +180,5 @@ function registerUser() {
 /* Impostazioni di overflow per evitare che il contenuto si sovrapponga */
 .v-main {
   overflow-y: auto;
-  height: calc(100vh - 64px); /* 64px per l'header */
 }
 </style>

@@ -239,7 +239,7 @@ export default {
           const vc = credential['my-vc']
           return vc && vc.proof
             ? {
-                label: `ID: ${vc.id} - Cotton: ${vc.credentialSubject.cottonProductionKg} Kg`,
+                label: `ID: ${vc.id}`,
                 value: index,
                 fullCredential: vc,
               }
